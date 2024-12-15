@@ -13,34 +13,37 @@ export default function handler(req, res) {
   // Base directory menunjuk ke root project
   const baseDir = process.cwd();
 
-  // Fungsi untuk mencari path case-insensitive
-  const findPathInsensitive = (baseDir, segments) => {
+  // Fungsi untuk mencocokkan path case-insensitive
+  const findPathInsensitive = (dir, segments) => {
     if (!segments.length) return '';
 
     const [currentSegment, ...remainingSegments] = segments;
-    const entries = fs.readdirSync(baseDir, { withFileTypes: true });
+    const entries = fs.readdirSync(dir, { withFileTypes: true });
 
+    // Cari folder/file yang cocok (case-insensitive)
     const match = entries.find(
       (entry) => entry.name.toLowerCase() === currentSegment.toLowerCase()
     );
 
     if (!match) return null;
 
-    const subPath = findPathInsensitive(
-      path.join(baseDir, match.name),
-      remainingSegments
-    );
+    const nextDir = path.join(dir, match.name);
 
-    return subPath !== null ? path.join(match.name, subPath) : match.name;
+    if (remainingSegments.length === 0) {
+      return match.isDirectory() ? null : match.name; // Pastikan file, bukan folder
+    }
+
+    return findPathInsensitive(nextDir, remainingSegments);
   };
 
-  // Pecah path berdasarkan "/"
+  // Pecah path menjadi segmen berdasarkan "/"
   const segments = requestedPath.split('/');
   const normalizedPath = findPathInsensitive(baseDir, segments);
 
   if (normalizedPath) {
-    // Redirect ke path yang ditemukan
-    res.writeHead(302, { Location: `/${normalizedPath}` });
+    // Jika ditemukan, redirect ke path yang benar
+    const redirectPath = `/${segments.slice(0, -1).join('/')}/${normalizedPath}`;
+    res.writeHead(302, { Location: redirectPath });
     res.end();
   } else {
     // Jika file tidak ditemukan
