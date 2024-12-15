@@ -10,10 +10,10 @@ export default function handler(req, res) {
     return;
   }
 
-  // Base directory adalah root project
+  // Base directory menunjuk ke root project
   const baseDir = process.cwd();
 
-  // Fungsi untuk mencocokkan path dengan case-insensitive
+  // Fungsi untuk mencari path case-insensitive
   const findPathInsensitive = (baseDir, segments) => {
     if (!segments.length) return '';
 
@@ -34,13 +34,16 @@ export default function handler(req, res) {
     return subPath !== null ? path.join(match.name, subPath) : match.name;
   };
 
+  // Pecah path berdasarkan "/"
   const segments = requestedPath.split('/');
   const normalizedPath = findPathInsensitive(baseDir, segments);
 
   if (normalizedPath) {
+    // Redirect ke path yang ditemukan
     res.writeHead(302, { Location: `/${normalizedPath}` });
     res.end();
   } else {
+    // Jika file tidak ditemukan
     res.status(404).send("File Not Found");
   }
 }
